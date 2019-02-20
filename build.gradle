@@ -1,0 +1,112 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'com.palantir.docker' version '0.21.0'
+    id 'com.palantir.docker-compose' version '0.21.0'
+    id 'com.diffplug.gradle.spotless' version '3.20.0'
+    id 'jacoco'
+}
+
+group = 'org.springframework.cdr'
+version = '1.0-SNAPSHOT'
+
+allprojects {
+
+    apply plugin: 'com.diffplug.gradle.spotless'
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+    apply plugin: 'jacoco'
+
+    sourceCompatibility = 1.11
+    targetCompatibility = 1.11
+
+    spotless {
+        java {
+            licenseHeaderFile rootProject.file("license.java")
+            removeUnusedImports()
+            googleJavaFormat()
+            targetExclude '**/GatewayApplication.java'
+        }
+    }
+
+    //  Exclude all Application files from the Jacoco test coverage
+    project.ext.set('jacocoTestDfltExclusion', '*Application*')
+
+    tasks {
+
+        jacoco {
+            toolVersion = "0.8.3"
+        }
+
+        jacocoTestReport {
+            afterEvaluate {
+                classDirectories.setFrom(classDirectories.files.collect {
+                    fileTree(dir: it, exclude: [
+                            "**/$project.ext.jacocoTestDfltExclusion*"
+                    ])
+                })
+            }
+        }
+
+        test {
+            jacoco {
+                excludes = ["$project.ext.jacocoTestDfltExclusion"]
+            }
+            finalizedBy(jacocoTestReport)
+
+        }
+        build {
+            dependsOn(jacocoTestCoverageVerification)
+        }
+    }
+}
+
+subprojects {
+
+    buildscript {
+        repositories {
+            mavenLocal()
+            mavenCentral()
+        }
+
+        dependencies {
+            classpath 'org.springframework.boot:spring-boot-gradle-plugin:2.1.3.RELEASE'
+        }
+    }
+
+    repositories {
+        mavenLocal()
+        maven { url "https://repo.spring.io/libs-snapshot" }
+        maven { url "https://repo.spring.io/libs-milestone" }
+        mavenCentral()
+    }
+
+    dependencies {
+        //  Test Dependencies
+        testCompile 'org.junit.jupiter:junit-jupiter-api:5.4.1'
+        testRuntime "org.junit.jupiter:junit-jupiter-engine:5.4.1"
+    }
+}
+
+//  Docker Tasks
+
+task run(type: Exec) {
+    commandLine "docker", "stack", "deploy", "-c", "deployment/build/docker-compose.yml", "ohana"
+}
+
+task stop(type: Exec) {
+    commandLine "docker", "stack", "rm", "ohana"
+} 
+
+task removeMetadataContainer(type: Exec) {
+    ignoreExitValue=true
+    dependsOn(stop)
+
+    commandLine "docker", "image", "rm", "metadata-server"
+}
+
+task removeAllDockerContainers {
+    dependsOn(removeMetadataContainer)
+}
+
+build.dependsOn(removeAllDockerContainers)

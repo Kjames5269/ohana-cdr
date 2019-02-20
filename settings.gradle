@@ -1,0 +1,3 @@
+rootProject.name = 'cdr-mis'
+
+include 'deployment', 'metadata-server'

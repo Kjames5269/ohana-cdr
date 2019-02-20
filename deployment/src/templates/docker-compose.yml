@@ -1,0 +1,14 @@
+networks:
+  metadata-server:
+    external: true
+
+services:
+  metadata:
+    image: metadata-server
+    networks:
+      default: null
+      metadata-server: null
+    ports:
+      - 9090:9090
+
+version: '3.3'

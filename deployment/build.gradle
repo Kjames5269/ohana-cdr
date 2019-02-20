@@ -1,0 +1,12 @@
+apply plugin: 'com.palantir.docker-compose'
+
+dependencies {
+    implementation project(':metadata-server')
+}
+
+dockerCompose {
+    template 'src/templates/docker-compose.yml'
+    dockerComposeFile 'build/docker-compose.yml'
+}
+
+build.dependsOn('generateDockerCompose')
