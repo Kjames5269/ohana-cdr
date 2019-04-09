@@ -50,13 +50,13 @@ To view logs for the running docker container run
 
 2. Add the following to the docker-compose.yml file:
 
-
+```
     networks:
     . . .
         
         metadata-server:
             external: true
-           
+
     services:
     . . .
         metadata:
@@ -64,4 +64,4 @@ To view logs for the running docker container run
             networks:
                 default: null
                 metadata-server: null
-            
+```
